@@ -1,10 +1,11 @@
 import { cookies } from 'next/headers';
 import { db } from '@/src';
 import { sessionsTable } from '@/src/db/schema';
+import { eq } from 'drizzle-orm';
 import { SignJWT, jwtVerify } from 'jose';
 import { SessionPayload } from './definitions';
 
-const secretKey = process.env.SESSION_SECRET;
+const secretKey = process.env.SESSION_SECRET || Bun.env.SESSION_SECRET;
 const encodedKey = new TextEncoder().encode(secretKey);
 
 export async function encrypt(payload: SessionPayload) {
@@ -18,10 +19,31 @@ export async function encrypt(payload: SessionPayload) {
 export async function decrypt(session: string | undefined = '') {
     try {
         const { payload } = await jwtVerify(session, encodedKey, { algorithms: ['HS256'] });
-        return payload;
-    } catch (error) {
-        console.log('Failed to verify session');
+        return payload as unknown as SessionPayload;
+    } catch {
+        return null;
     }
+}
+
+export async function getSession(): Promise<SessionPayload | null> {
+    const cookieStore = await cookies();
+    const token = cookieStore.get('s3manager_session')?.value;
+    if (!token) return null;
+
+    const payload = await decrypt(token);
+    if (!payload?.id) return null;
+    if (payload.expiresAt && Date.now() > payload.expiresAt) return null;
+
+    const [sessionRow] = await db
+        .select({ id: sessionsTable.id, expiresAt: sessionsTable.expiresAt })
+        .from(sessionsTable)
+        .where(eq(sessionsTable.id, payload.id))
+        .limit(1);
+
+    if (!sessionRow) return null;
+    if (sessionRow.expiresAt && Date.now() > sessionRow.expiresAt) return null;
+
+    return payload;
 }
 
 export async function createSession() {

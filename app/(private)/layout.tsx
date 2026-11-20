@@ -1,5 +1,5 @@
 import type { Metadata } from 'next';
-import { Database, LayoutDashboard } from 'lucide-react';
+import { Database, LayoutDashboard, Plug } from 'lucide-react';
 import Link from 'next/link';
 
 export const metadata: Metadata = {
@@ -30,7 +30,6 @@ export default function RootLayout({ children }: LayoutProps<'/'>) {
                             stroke="currentColor"
                             className="my-1.5 inline-block size-4"
                         >
-                            className="min-h-full flex flex-col"
                             <path d="M4 4m0 2a2 2 0 0 1 2 -2h12a2 2 0 0 1 2 2v12a2 2 0 0 1 -2 2h-12a2 2 0 0 1 -2 -2z"></path>
                             <path d="M9 4v16"></path>
                             <path d="M14 10l2 2l-2 2"></path>
@@ -69,11 +68,23 @@ export default function RootLayout({ children }: LayoutProps<'/'>) {
                             <Link
                                 href={'/buckets'}
                                 className="is-drawer-close:tooltip is-drawer-close:tooltip-right"
-                                data-tip="Settings"
+                                data-tip="Buckets"
                             >
-                                {/* Settings icon */}
+                                {/* Database icon */}
                                 <Database size={16} />
                                 <span className="is-drawer-close:hidden">Buckets</span>
+                            </Link>
+                        </li>
+
+                        {/* List item */}
+                        <li>
+                            <Link
+                                href={'/connections'}
+                                className="is-drawer-close:tooltip is-drawer-close:tooltip-right"
+                                data-tip="Connections"
+                            >
+                                <Plug size={16} />
+                                <span className="is-drawer-close:hidden">Connections</span>
                             </Link>
                         </li>
                     </ul>
