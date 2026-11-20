@@ -4,6 +4,7 @@ import { useCallback, useEffect, useState } from 'react';
 import Link from 'next/link';
 import {
     Activity,
+    ArrowRight,
     Bookmark,
     Database,
     FolderOpen,
@@ -36,6 +37,13 @@ interface DashboardData {
         status: string;
         createdAt: string;
     }[];
+}
+
+function getTransferBadgeClass(type: string) {
+    if (type === 'UPLOAD') return 'badge-success badge-soft';
+    if (type === 'COPY') return 'badge-info badge-soft';
+    if (type === 'DELETE') return 'badge-error badge-soft';
+    return 'badge-ghost';
 }
 
 export default function DashboardPage() {
@@ -73,59 +81,98 @@ export default function DashboardPage() {
 
     return (
         <div className="w-full space-y-6 p-4 sm:p-6 lg:p-8">
-            <div>
-                <h1 className="text-2xl font-bold tracking-tight">Dashboard</h1>
-                <p className="text-sm text-base-content/70">
-                    Ringkasan koneksi S3 aktif, bookmark folder, dan aktivitas transfer terbaru.
-                </p>
+            {/* Hero Header */}
+            <div className="card bg-linear-to-r from-primary/10 via-base-100 to-secondary/10 border border-base-200 shadow-sm">
+                <div className="card-body p-6 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                    <div className="space-y-1">
+                        <h1 className="text-2xl font-bold tracking-tight">
+                            Object Storage Console
+                        </h1>
+                        <p className="text-sm text-base-content/70">
+                            Pantau koneksi S3 aktif, akses cepat folder favorit, dan riwayat aktivitas terbaru.
+                        </p>
+                    </div>
+                    <div className="flex flex-wrap gap-2 shrink-0">
+                        <Link href="/buckets" className="btn btn-primary btn-sm gap-1.5">
+                            <Database className="w-4 h-4" />
+                            Browse Buckets
+                        </Link>
+                        <Link href="/connections" className="btn btn-outline btn-sm gap-1.5">
+                            <Plug className="w-4 h-4" />
+                            Connections
+                        </Link>
+                    </div>
+                </div>
             </div>
 
+            {/* Stats Grid */}
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                <div className="card bg-base-100 border border-base-200 shadow-sm">
-                    <div className="card-body p-5">
+                <div className="card bg-base-100 border border-base-200 shadow-sm hover:border-primary/40 transition-colors">
+                    <div className="card-body p-5 space-y-2">
                         <div className="flex items-center justify-between">
-                            <span className="text-xs text-base-content/60">Active Connection</span>
-                            <Server className="w-4 h-4 text-primary" />
+                            <span className="text-xs font-medium text-base-content/60">
+                                Active Connection
+                            </span>
+                            <div className="p-2 rounded-lg bg-primary/10 text-primary">
+                                <Server className="w-4 h-4" />
+                            </div>
                         </div>
                         {data?.activeConnection ? (
-                            <>
+                            <div>
                                 <div className="text-lg font-bold truncate">
                                     {data.activeConnection.name}
                                 </div>
                                 <div className="text-xs font-mono text-base-content/60 truncate">
                                     {data.activeConnection.endpoint}
                                 </div>
-                            </>
+                            </div>
                         ) : (
-                            <Link href="/connections" className="link link-primary text-sm mt-1">
-                                Tambah koneksi S3 →
+                            <Link
+                                href="/connections"
+                                className="inline-flex items-center gap-1 text-sm font-medium text-primary hover:underline"
+                            >
+                                Tambah koneksi S3 <ArrowRight className="w-3.5 h-3.5" />
                             </Link>
                         )}
                     </div>
                 </div>
 
-                <div className="card bg-base-100 border border-base-200 shadow-sm">
-                    <div className="card-body p-5">
+                <div className="card bg-base-100 border border-base-200 shadow-sm hover:border-secondary/40 transition-colors">
+                    <div className="card-body p-5 space-y-2">
                         <div className="flex items-center justify-between">
-                            <span className="text-xs text-base-content/60">Total Connections</span>
-                            <Plug className="w-4 h-4 text-secondary" />
+                            <span className="text-xs font-medium text-base-content/60">
+                                Total Connections
+                            </span>
+                            <div className="p-2 rounded-lg bg-secondary/10 text-secondary">
+                                <Plug className="w-4 h-4" />
+                            </div>
                         </div>
                         <div className="text-2xl font-bold">{data?.totalConnections ?? 0}</div>
-                        <Link href="/connections" className="text-xs link link-primary">
-                            Kelola koneksi
+                        <Link
+                            href="/connections"
+                            className="inline-flex items-center gap-1 text-xs text-primary hover:underline"
+                        >
+                            Kelola koneksi <ArrowRight className="w-3 h-3" />
                         </Link>
                     </div>
                 </div>
 
-                <div className="card bg-base-100 border border-base-200 shadow-sm">
-                    <div className="card-body p-5">
+                <div className="card bg-base-100 border border-base-200 shadow-sm hover:border-accent/40 transition-colors">
+                    <div className="card-body p-5 space-y-2">
                         <div className="flex items-center justify-between">
-                            <span className="text-xs text-base-content/60">Bookmarks</span>
-                            <Bookmark className="w-4 h-4 text-accent" />
+                            <span className="text-xs font-medium text-base-content/60">
+                                Bookmarks
+                            </span>
+                            <div className="p-2 rounded-lg bg-accent/10 text-accent">
+                                <Bookmark className="w-4 h-4" />
+                            </div>
                         </div>
                         <div className="text-2xl font-bold">{data?.bookmarks.length ?? 0}</div>
-                        <Link href="/buckets" className="text-xs link link-primary">
-                            Buka Buckets
+                        <Link
+                            href="/buckets"
+                            className="inline-flex items-center gap-1 text-xs text-primary hover:underline"
+                        >
+                            Buka Buckets <ArrowRight className="w-3 h-3" />
                         </Link>
                     </div>
                 </div>
@@ -135,12 +182,17 @@ export default function DashboardPage() {
                 {/* Bookmarks */}
                 <div className="card bg-base-100 border border-base-200 shadow-sm">
                     <div className="card-body p-5 space-y-3">
-                        <div className="flex items-center gap-2 font-semibold text-sm">
-                            <Bookmark className="w-4 h-4 text-primary" />
-                            Bookmarked Folders
+                        <div className="flex items-center justify-between">
+                            <div className="flex items-center gap-2 font-semibold text-sm">
+                                <Bookmark className="w-4 h-4 text-primary" />
+                                Bookmarked Folders
+                            </div>
+                            <span className="badge badge-ghost badge-xs">
+                                {data?.bookmarks.length ?? 0}
+                            </span>
                         </div>
                         {!data?.bookmarks.length ? (
-                            <p className="text-xs text-base-content/60 py-4">
+                            <p className="text-xs text-base-content/60 py-6 text-center">
                                 Belum ada bookmark. Buka salah satu bucket dan klik Bookmark untuk menyimpan jalan pintas.
                             </p>
                         ) : (
@@ -152,7 +204,7 @@ export default function DashboardPage() {
                                     >
                                         <Link
                                             href={`/buckets/${encodeURIComponent(bm.bucketName)}?prefix=${encodeURIComponent(bm.prefix)}`}
-                                            className="flex items-center gap-2 min-w-0 hover:text-primary"
+                                            className="flex items-center gap-2.5 min-w-0 hover:text-primary"
                                         >
                                             <FolderOpen className="w-4 h-4 text-primary shrink-0" />
                                             <span className="text-xs font-mono truncate">
@@ -176,12 +228,17 @@ export default function DashboardPage() {
                 {/* Recent Transfers */}
                 <div className="card bg-base-100 border border-base-200 shadow-sm">
                     <div className="card-body p-5 space-y-3">
-                        <div className="flex items-center gap-2 font-semibold text-sm">
-                            <Activity className="w-4 h-4 text-primary" />
-                            Recent Activity
+                        <div className="flex items-center justify-between">
+                            <div className="flex items-center gap-2 font-semibold text-sm">
+                                <Activity className="w-4 h-4 text-primary" />
+                                Recent Activity
+                            </div>
+                            <span className="badge badge-ghost badge-xs">
+                                {data?.recentTransfers.length ?? 0}
+                            </span>
                         </div>
                         {!data?.recentTransfers.length ? (
-                            <p className="text-xs text-base-content/60 py-4">
+                            <p className="text-xs text-base-content/60 py-6 text-center">
                                 Belum ada aktivitas upload, copy, atau hapus objek.
                             </p>
                         ) : (
@@ -189,18 +246,22 @@ export default function DashboardPage() {
                                 {data.recentTransfers.map((t) => (
                                     <div
                                         key={t.id}
-                                        className="flex items-center justify-between py-2 gap-3 text-xs"
+                                        className="flex items-center justify-between py-2.5 gap-3 text-xs"
                                     >
                                         <div className="flex items-center gap-2 min-w-0">
-                                            <span className="badge badge-xs badge-ghost font-mono">
+                                            <span
+                                                className={`badge badge-xs font-mono ${getTransferBadgeClass(t.type)}`}
+                                            >
                                                 {t.type}
                                             </span>
-                                            <span className="font-mono truncate" title={`${t.bucketName}/${t.objectKey}`}>
-                                                <Database className="w-3 h-3 inline mr-1 opacity-60" />
+                                            <span
+                                                className="font-mono truncate"
+                                                title={`${t.bucketName}/${t.objectKey}`}
+                                            >
                                                 {t.bucketName}/{t.objectKey}
                                             </span>
                                         </div>
-                                        <span className="text-base-content/50 shrink-0">
+                                        <span className="text-base-content/50 shrink-0 font-mono text-[11px]">
                                             {new Date(t.createdAt).toLocaleTimeString('id-ID')}
                                         </span>
                                     </div>
