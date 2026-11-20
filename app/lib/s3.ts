@@ -1,6 +1,7 @@
 import { S3Client as BunS3Client } from 'bun';
 import {
     S3Client as AwsS3Client,
+    CopyObjectCommand,
     CORSRule,
     CreateBucketCommand,
     DeleteBucketCommand,
@@ -313,4 +314,157 @@ export async function updateBucketSettings(
             );
         }
     }
+}
+
+export interface ListedFolder {
+    prefix: string;
+    name: string;
+}
+
+export interface ListedObject {
+    key: string;
+    name: string;
+    size: number;
+    lastModified: string | null;
+    eTag: string | null;
+}
+
+export interface ListObjectsResult {
+    folders: ListedFolder[];
+    objects: ListedObject[];
+    isTruncated: boolean;
+    nextContinuationToken: string | null;
+}
+
+/**
+ * List folders (commonPrefixes) and objects in a bucket using Bun's native S3Client.
+ */
+export async function listObjects(
+    config: S3ConnectionConfig,
+    bucketName: string,
+    options: {
+        prefix?: string;
+        continuationToken?: string;
+        maxKeys?: number;
+    } = {}
+): Promise<ListObjectsResult> {
+    const bunClient = createBunS3Client(config, bucketName);
+    const prefix = options.prefix ?? '';
+
+    const res = await bunClient.list({
+        prefix: prefix || undefined,
+        delimiter: '/',
+        continuationToken: options.continuationToken || undefined,
+        maxKeys: options.maxKeys ?? 200,
+    });
+
+    const folders: ListedFolder[] = (res.commonPrefixes ?? []).map((cp) => {
+        const trimmed = cp.prefix.slice(prefix.length).replace(/\/$/, '');
+        return {
+            prefix: cp.prefix,
+            name: trimmed || cp.prefix,
+        };
+    });
+
+    const objects: ListedObject[] = (res.contents ?? [])
+        .filter((item) => item.key !== prefix)
+        .map((item) => ({
+            key: item.key,
+            name: item.key.slice(prefix.length),
+            size: item.size ?? 0,
+            lastModified: item.lastModified ?? null,
+            eTag: item.eTag ?? null,
+        }));
+
+    return {
+        folders,
+        objects,
+        isTruncated: Boolean(res.isTruncated),
+        nextContinuationToken: res.nextContinuationToken ?? null,
+    };
+}
+
+/**
+ * Upload an object using Bun's native S3Client.
+ */
+export async function uploadObject(
+    config: S3ConnectionConfig,
+    bucketName: string,
+    key: string,
+    data: ArrayBuffer | Uint8Array | string,
+    contentType?: string
+): Promise<void> {
+    const bunClient = createBunS3Client(config, bucketName);
+    const file = bunClient.file(key);
+    await file.write(data, contentType ? { type: contentType } : undefined);
+}
+
+/**
+ * Get object stream and metadata using Bun's native S3Client.
+ */
+export async function getObjectDownload(
+    config: S3ConnectionConfig,
+    bucketName: string,
+    key: string
+) {
+    const bunClient = createBunS3Client(config, bucketName);
+    const file = bunClient.file(key);
+    const stat = await file.stat();
+    const stream = file.stream();
+
+    return {
+        stream,
+        size: stat.size,
+        contentType: stat.type || 'application/octet-stream',
+        etag: stat.etag,
+    };
+}
+
+/**
+ * Delete one or more objects using Bun's native S3Client.
+ */
+export async function deleteObjects(
+    config: S3ConnectionConfig,
+    bucketName: string,
+    keys: string[]
+): Promise<void> {
+    const bunClient = createBunS3Client(config, bucketName);
+    await Promise.all(keys.map((key) => bunClient.delete(key)));
+}
+
+/**
+ * Generate a presigned URL using Bun's native S3Client.
+ */
+export function presignObject(
+    config: S3ConnectionConfig,
+    bucketName: string,
+    key: string,
+    expiresInSeconds = 3600
+): string {
+    const bunClient = createBunS3Client(config, bucketName);
+    return bunClient.file(key).presign({ expiresIn: expiresInSeconds });
+}
+
+/**
+ * Server-side copy within the same bucket.
+ */
+export async function copyObjectInBucket(
+    config: S3ConnectionConfig,
+    bucketName: string,
+    sourceKey: string,
+    destinationKey: string
+): Promise<void> {
+    const client = createAwsS3Client(config);
+    const encodedSource = `${bucketName}/${sourceKey
+        .split('/')
+        .map((segment) => encodeURIComponent(segment))
+        .join('/')}`;
+
+    await client.send(
+        new CopyObjectCommand({
+            Bucket: bucketName,
+            CopySource: encodedSource,
+            Key: destinationKey,
+        })
+    );
 }
