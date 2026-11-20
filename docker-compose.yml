@@ -6,7 +6,7 @@ services:
     container_name: s3manager
     restart: unless-stopped
     ports:
-      - "3000:3000"
+      - "11000:11000"
     env_file:
       - .env.local
     environment:
@@ -15,7 +15,7 @@ services:
     volumes:
       - ./storage:/app/storage
     healthcheck:
-      test: ["CMD", "bun", "-e", "fetch('http://127.0.0.1:3000').then(r => process.exit(r.ok ? 0 : 1)).catch(() => process.exit(1))"]
+      test: [ "CMD", "bun", "-e", "fetch('http://127.0.0.1:11000').then(r => process.exit(r.ok ? 0 : 1)).catch(() => process.exit(1))" ]
       interval: 30s
       timeout: 5s
       retries: 3

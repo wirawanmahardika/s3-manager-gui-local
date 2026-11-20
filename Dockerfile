@@ -22,7 +22,7 @@ WORKDIR /app
 
 ENV NODE_ENV=production
 ENV NEXT_TELEMETRY_DISABLED=1
-ENV PORT=3000
+ENV PORT=11000
 ENV HOSTNAME=0.0.0.0
 ENV DB_FILE_NAME=/app/storage/local.db
 ENV NEXT_PHASE=
@@ -38,6 +38,6 @@ RUN mkdir -p /app/storage && chown -R bun:bun /app/storage
 
 USER bun
 
-EXPOSE 3000
+EXPOSE 11000
 
-CMD ["bun", "--bun", "next", "start", "-H", "0.0.0.0", "-p", "3000"]
+CMD ["bun", "--bun", "next", "start", "-H", "0.0.0.0", "-p", "11000"]
